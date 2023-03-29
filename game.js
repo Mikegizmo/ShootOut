@@ -5,24 +5,60 @@ canvas.setAttribute('height', grid*15);
 document.body.prepend(canvas);
 canvas.style.border = '1px solid black';
 const ctx = canvas.getContext('2d');
-const player = {
-  x:10,
+const players = [{
+  x:canvas.width/2 + (grid*2),
   y:canvas.height/2,
   size:30,
-  speed:3
-};
+  speed:3,
+  color:'red',
+  cooldown:0
+}, {
+  x:canvas.width/2 - (grid*2),
+  y:canvas.height/2,
+  size:30,
+  speed:3,
+  color:'blue',
+  cooldown:0
+}];
+
 const game = {
-  req:''
+  req:'',
+  bullets:[],
+  bulletSpeed:5
 };
 const keyz = {
   ArrowLeft:false,
   ArrowRight:false,
   ArrowUp:false,
-  ArrowDown:false
+  ArrowDown:false,
+  KeyA:false,
+  KeyS:false,
+  KeyW:false,
+  KeyZ:false
 };
 document.addEventListener('keydown', (e)=> {
   if(e.code in keyz) {
     keyz[e.code] = true;
+  }
+  if(e.code == 'Space' && players[0].cooldown <= 0) {
+    players[0].cooldown = 20;
+    game.bullets.push({
+      x:players[0].x - players[0].size -15,
+      y:players[0].y -5,
+      speed: -game.bulletSpeed,
+      size:10,
+      color:'indianred',
+    })
+  }
+  if(e.code == 'KeyD' && players[1].cooldown <= 0) {
+    players[1].cooldown = 20;
+    game.bullets.push({
+      x:players[1].x - players[1].size +15,
+      y:players[1].y -5,
+      speed: game.bulletSpeed,
+      size:10,
+      color:'royalblue',
+    })
   }
 })
 document.addEventListener('keyup', (e)=> {
@@ -32,78 +68,58 @@ document.addEventListener('keyup', (e)=> {
   console.log(keyz);
 })
 
-console.log(player);
-// for (let i=0;i<10;i++) {
-//   drawmove(i);
-// }
-
 game.req = requestAnimationFrame(draw);
-canvas.addEventListener('click',()=>{
-  player.speed *= -1;
-})
 
 function movementPlayer() {
-  if(keyz['ArrowLeft']) {
-    player.x -= player.speed;
+  if(keyz['ArrowLeft'] && players[0].x > canvas.width/2+players[0].size) {
+    players[0].x -= players[0].speed;
   }
-  if(keyz['ArrowRight']) {
-    player.x += player.speed;
+  if(keyz['ArrowRight'] && players[0].x < canvas.width-players[0].size) {
+    players[0].x += players[0].speed;
   }
-  if(keyz['ArrowUp']) {
-    player.y -= player.speed;
+  if(keyz['ArrowUp'] && players[0].y > players[0].size) {
+    players[0].y -= players[0].speed;
   }
-  if(keyz['ArrowDown']) {
-    player.y += player.speed;
+  if(keyz['ArrowDown'] && players[0].y < canvas.height-players[0].size) {
+    players[0].y += players[0].speed;
+  }
+  if(keyz['KeyA'] && players[1].x > players[1].size) {
+    players[1].x -= players[1].speed;
+  }
+  if(keyz['KeyS'] && players[1].x < canvas.width/2-players[1].size) {
+    players[1].x += players[1].speed;
+  }
+  if(keyz['KeyW'] && players[1].y > players[1].size) {
+    players[1].y -= players[1].speed;
+  }
+  if(keyz['KeyZ'] && players[1].y < canvas.height-players[1].size) {
+    players[1].y += players[1].speed;
   }
 }
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  // console.log(player.x);
   movementPlayer();
+  game.bullets.forEach((bull,index)=>{
+    ctx.fillStyle = bull.color;
+    ctx.fillRect(bull.x,bull.y,bull.size,bull.size);
+    bull.x+=bull.speed;
+    if(bull.x<0) {
+      game.bullets.splice(index,1);
+    }
+  })
   ctx.beginPath();
-  ctx.fillStyle = 'red';
-  ctx.arc(player.x,player.y,player.size,0,Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle = 'blue';
-  ctx.fillRect(player.x,player.y,5,5);
+  ctx.moveTo(canvas.width/2,0);
+  ctx.lineTo(canvas.width/2,canvas.height);
+  ctx.stroke();
+  players.forEach((player)=>{
+    if(player.cooldown > 0) {
+      player.cooldown--;
+    }
+    ctx.beginPath();
+    ctx.fillStyle = player.color;
+    ctx.arc(player.x,player.y,player.size,0,Math.PI*2);
+    ctx.fill();
+  })
   game.req = requestAnimationFrame(draw);
-}
-
-function drawcirc() {
-  ctx.beginPath();
-  ctx.fillStyle = 'yellow';
-  ctx.arc(300,100,50,0,Math.PI*2,true);
-  ctx.fill();
-  ctx.strokeStyle = 'black';
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.fillStyle = 'black';
-  ctx.moveTo(300,80);
-  ctx.arc(280,80,15,0,Math.PI*2,true);
-  ctx.moveTo(335,80);
-  ctx.arc(320,80,15,0,Math.PI*2,true);
-  ctx.moveTo(310,110);
-  ctx.arc(300,110,30,0,Math.PI,false);
-  ctx.fill();
-}
-
-function drawpath() {
-  ctx.fillStyle ='blue';
-  ctx.fillRect(canvas.width/2,canvas.height/2,5,5);
-  ctx.fillRect(100,100,5,5);
-  ctx.fillRect(100,300,5,5);
-  ctx.fillStyle = 'red';
-  ctx.beginPath();
-  ctx.moveTo(canvas.width/2,canvas.height/2);
-  ctx.lineTo(100,100);
-  ctx.lineTo(100,300);
-  ctx.lineTo(canvas.width/2,canvas.height/2);
-  ctx.stroke();
-  ctx.fill();
-}
-
-function draw2() {
-  ctx.fillRect(5,10,50,30);
-  ctx.strokeRect(150,10,50,30);
 }
